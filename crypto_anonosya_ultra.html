@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="ru" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dark Tech Engine — сайт под крипту/трейдинг за 24 часа</title>
+  <meta name="description" content="Премиальный Dark Tech движок: Awwwards‑стиль, анимации, spotlight‑эффект, демо‑видео. Готовый код + адаптация под твой оффер за 20 000 ₽. Запуск за 24 часа." />
+
+  <!-- OpenGraph (Telegram) -->
+  <meta property="og:title" content="Dark Tech Engine — премиальный сайт под крипту/трейдинг" />
+  <meta property="og:description" content="Готовый код + адаптация под твой оффер за 20 000 ₽. Демо‑видео внутри. Запуск за 24 часа." />
+  <meta property="og:type" content="website" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- GSAP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg: '#000000',
+            glass: 'rgba(255, 255, 255, 0.06)',
+            border: 'rgba(255, 255, 255, 0.12)',
+            accent: '#00E5FF',
+            accent2: '#7C3AED',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace']
+          },
+          backgroundImage: {
+            'aurora': 'conic-gradient(from 180deg at 50% 50%, #00E5FF 0deg, #7C3AED 180deg, #2563eb 360deg)'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root{ --mx: 50%; --my: 35%; }
+    body { background-color: #000; color: white; overflow-x: hidden; }
+
+    /* Subtle grain/noise overlay */
+    .grain {
+      position: fixed; inset: 0; pointer-events: none; z-index: 5;
+      opacity: .08;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
+      mix-blend-mode: overlay;
+    }
+
+    /* Glass */
+    .glass-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.03) 100%);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.55);
+    }
+
+    /* Aurora glow blobs */
+    .glow-spot {
+      position: absolute; width: 680px; height: 680px;
+      background: radial-gradient(circle, rgba(0, 229, 255, 0.16) 0%, transparent 70%);
+      filter: blur(90px); opacity: 0.75; z-index: -2;
+      animation: pulse 9s infinite alternate;
+    }
+    .glow-spot.purple { background: radial-gradient(circle, rgba(124, 58, 237, 0.16) 0%, transparent 70%); }
+    @keyframes pulse { 0% { transform: scale(1); opacity: .55; } 100% { transform: scale(1.25); opacity: .85; } }
+
+    /* Spotlight ("фонарик") */
+    .spotlight {
+      position: absolute; inset: -1px; z-index: -1; border-radius: 32px;
+      background:
+        radial-gradient(600px circle at var(--mx) var(--my),
+          rgba(0,229,255,0.14),
+          rgba(124,58,237,0.08) 35%,
+          transparent 60%);
+      opacity: .9;
+      transition: opacity .25s ease;
+      pointer-events: none;
+    }
+
+    /* Reveal */
+    .reveal { opacity: 0; transform: translateY(26px); }
+
+    /* Text gradient */
+    .text-gradient {
+      background: linear-gradient(to right, #fff, rgba(0,229,255,.95));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Glitch label (tiny) */
+    .glitch {
+      position: relative;
+      text-shadow: 0 0 20px rgba(0,229,255,0.25);
+    }
+    .glitch::before, .glitch::after {
+      content: attr(data-text);
+      position: absolute; left: 0; top: 0; width: 100%;
+      opacity: .45;
+      clip-path: inset(0 0 55% 0);
+      transform: translate(1px, 0);
+      color: rgba(0,229,255,0.85);
+      pointer-events: none;
+    }
+    .glitch::after {
+      clip-path: inset(55% 0 0 0);
+      transform: translate(-1px, 0);
+      color: rgba(124,58,237,0.75);
+    }
+
+    /* Mockup frame */
+    .device {
+      border-radius: 44px;
+      border: 8px solid #1d1d1d;
+      background: #060606;
+      box-shadow: 0 0 0 2px #303030, 0 40px 80px -12px rgba(0, 229, 255, 0.18);
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Modal */
+    .modal-backdrop { background: rgba(0,0,0,0.65); backdrop-filter: blur(10px); }
+    .modal { transform: translateY(12px) scale(.98); opacity: 0; }
+    .modal.show { transform: translateY(0) scale(1); opacity: 1; transition: all .25s ease; }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce){
+      * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+    }
+  
+    /* ===== Ultra cursor light ("фонарик") ===== */
+    #cursorLight {
+      position: fixed;
+      width: 760px; height: 760px;
+      left: 0; top: 0;
+      transform: translate3d(-9999px,-9999px,0);
+      pointer-events: none;
+      z-index: 1; /* under content, above background */
+      border-radius: 999px;
+      background: radial-gradient(circle,
+        rgba(0,229,255,0.18) 0%,
+        rgba(124,58,237,0.10) 28%,
+        rgba(0,229,255,0.06) 45%,
+        transparent 62%);
+      mix-blend-mode: screen;
+      filter: blur(2px);
+      opacity: .9;
+      will-change: transform, opacity;
+    }
+    #cursorDot {
+      position: fixed;
+      width: 14px; height: 14px;
+      left: 0; top: 0;
+      transform: translate3d(-9999px,-9999px,0);
+      pointer-events: none;
+      z-index: 2;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(255,255,255,0.85), rgba(0,229,255,0.45) 55%, transparent 70%);
+      box-shadow: 0 0 24px rgba(0,229,255,0.35);
+      opacity: .9;
+      will-change: transform, opacity;
+    }
+
+    /* ===== Parallax stage layers ===== */
+    #parallaxStage {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -20;
+      overflow: hidden;
+    }
+    .parallax-layer {
+      position: absolute;
+      inset: -12%;
+      will-change: transform;
+      transform: translate3d(0,0,0);
+    }
+
+    /* Stars (lightweight) */
+    .layer-stars {
+      background-image:
+        radial-gradient(circle at 20% 30%, rgba(255,255,255,0.18) 1px, transparent 2px),
+        radial-gradient(circle at 70% 20%, rgba(255,255,255,0.16) 1px, transparent 2px),
+        radial-gradient(circle at 40% 80%, rgba(255,255,255,0.12) 1px, transparent 2px),
+        radial-gradient(circle at 85% 70%, rgba(255,255,255,0.12) 1px, transparent 2px),
+        radial-gradient(circle at 10% 75%, rgba(255,255,255,0.10) 1px, transparent 2px);
+      background-size: 420px 420px, 520px 520px, 620px 620px, 700px 700px, 560px 560px;
+      opacity: .55;
+      filter: blur(.25px);
+    }
+
+    /* Grid */
+    .layer-grid {
+      background-image:
+        linear-gradient(to right, rgba(255,255,255,0.06) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
+      background-size: 64px 64px;
+      mask-image: radial-gradient(closest-side, rgba(0,0,0,0.95), transparent 75%);
+      opacity: .35;
+    }
+
+    /* Aurora wash */
+    .layer-aurora {
+      background:
+        radial-gradient(900px circle at 30% 30%, rgba(0,229,255,0.16), transparent 58%),
+        radial-gradient(800px circle at 70% 55%, rgba(124,58,237,0.14), transparent 60%),
+        radial-gradient(700px circle at 45% 85%, rgba(37,99,235,0.10), transparent 60%);
+      filter: blur(14px);
+      opacity: .95;
+    }
+
+    /* Floating particles (CSS only) */
+    .layer-particles::before {
+      content: "";
+      position: absolute; inset: 0;
+      background-image:
+        radial-gradient(circle, rgba(0,229,255,0.18) 1px, transparent 2px),
+        radial-gradient(circle, rgba(124,58,237,0.16) 1px, transparent 2px),
+        radial-gradient(circle, rgba(255,255,255,0.10) 1px, transparent 2px);
+      background-size: 220px 220px, 260px 260px, 320px 320px;
+      background-position: 0 0, 120px 80px, 40px 180px;
+      opacity: .35;
+      filter: blur(.15px);
+      animation: drift 18s linear infinite;
+    }
+    @keyframes drift {
+      0% { transform: translate3d(0,0,0); }
+      100% { transform: translate3d(-180px, -120px, 0); }
+    }
+
+    /* Tilt cards */
+    .tilt-card {
+      transform-style: preserve-3d;
+      will-change: transform;
+      transition: transform .18s ease;
+    }
+    .tilt-card .tilt-pop { transform: translateZ(18px); }
+
+  </style>
+</head>
+
+<body class="antialiased">
+  <div class="grain"></div>
+
+  <div id="cursorLight" aria-hidden="true"></div>
+  <div id="cursorDot" aria-hidden="true"></div>
+
+  <!-- Ultra Parallax Background -->
+  <div id="parallaxStage" aria-hidden="true">
+    <div class="parallax-layer layer-aurora" data-depth="0.028"></div>
+    <div class="parallax-layer layer-stars" data-depth="0.016"></div>
+    <div class="parallax-layer layer-grid" data-depth="0.010"></div>
+    <div class="parallax-layer layer-particles" data-depth="0.040"></div>
+  </div>
+
+
+  <!-- Background glows -->
+  <div class="glow-spot top-[-120px] left-1/2 -translate-x-1/2"></div>
+  <div class="glow-spot purple bottom-[-160px] right-[-160px]"></div>
+
+  <!-- Sticky top nav -->
+  <nav class="fixed top-5 w-full z-50 flex justify-center px-4">
+    <div class="glass-card px-5 py-3 rounded-full flex items-center gap-4 md:gap-8 max-w-5xl w-full justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full bg-white/10 border border-white/10 grid place-items-center">
+          <span class="font-black text-xs tracking-widest text-white">DTE</span>
+        </div>
+        <div class="leading-tight">
+          <div class="font-bold tracking-tight">Dark Tech Engine</div>
+          <div class="text-[10px] text-white/55 font-mono">AWWWARDS‑STYLE / LAUNCH ≤ 24H</div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 md:gap-3">
+        <a href="#pricing" class="hidden md:inline-flex items-center justify-center px-4 py-2 rounded-full text-xs font-bold bg-white text-black hover:scale-[1.03] transition-transform">
+          Забрать за 20 000 ₽
+        </a>
+        <button id="demoBtnTop" class="inline-flex items-center justify-center px-4 py-2 rounded-full text-xs font-bold bg-white/10 border border-white/10 hover:bg-white/15 transition-colors">
+          Смотреть демо
+        </button>
+        <a id="tgBtnTop" href="https://t.me/anonosya" target="_blank" rel="noreferrer"
+           class="inline-flex items-center justify-center px-4 py-2 rounded-full text-xs font-bold bg-[color:var(--tw-color-accent)] text-black hover:shadow-[0_0_30px_rgba(0,229,255,0.25)] transition-shadow">
+          Telegram
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="min-h-screen flex flex-col items-center justify-center text-center px-4 pt-28 pb-16 overflow-hidden relative">
+    <div class="absolute inset-0 -z-10 opacity-70">
+      <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(0,229,255,0.12),transparent_55%)]"></div>
+      <div class="absolute inset-0 bg-[radial-gradient(circle_at_70%_60%,rgba(124,58,237,0.10),transparent_55%)]"></div>
+    </div>
+
+    <div class="space-y-7 max-w-5xl z-10">
+      <div class="reveal" data-delay="0.00">
+        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 text-[10px] text-cyan-200 uppercase tracking-widest bg-white/5 backdrop-blur-md font-mono">
+          <span class="glitch" data-text="DARK TECH ENGINE">DARK TECH ENGINE</span>
+          <span class="text-white/40">•</span>
+          Готовый код + адаптация
+        </span>
+      </div>
+
+      <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.05] reveal" data-delay="0.05">
+        Премиальный сайт <br class="hidden md:block">
+        <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-purple-300 to-blue-300">под крипту/трейдинг</span>
+        <br class="hidden md:block">
+        запуск за <span class="text-gradient">24 часа</span>
+      </h1>
+
+      <p class="text-lg md:text-xl text-white/70 max-w-2xl mx-auto reveal" data-delay="0.10">
+        У тебя канал/сигналы/наставничество — тебе нужен <span class="text-white">дорогой вид</span>.
+        Я отдаю готовый Dark Tech “движок” за <span class="text-white font-bold">20 000 ₽</span> + адаптация под твой текст.
+      </p>
+
+      <div class="pt-2 flex flex-col sm:flex-row gap-3 justify-center items-center reveal" data-delay="0.14">
+        <button id="demoBtnHero" class="px-8 py-4 bg-white text-black rounded-full font-bold text-base md:text-lg hover:shadow-[0_0_40px_rgba(255,255,255,0.22)] transition-shadow">
+          Смотреть демо (30 сек)
+        </button>
+        <a href="#pricing" class="px-8 py-4 glass-card rounded-full font-bold text-base md:text-lg hover:bg-white/10 transition-colors">
+          Забрать движок
+        </a>
+        <a id="tgBtnHero" href="https://t.me/anonosya" target="_blank" rel="noreferrer"
+           class="px-8 py-4 rounded-full font-bold text-base md:text-lg bg-[color:var(--tw-color-accent)] text-black hover:shadow-[0_0_40px_rgba(0,229,255,0.28)] transition-shadow">
+          Написать в Telegram
+        </a>
+      </div>
+
+      <div class="pt-4 flex flex-wrap justify-center gap-2 text-[12px] text-white/60 reveal" data-delay="0.18">
+        <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 font-mono">Без подписок</span>
+        <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 font-mono">Код у тебя</span>
+        <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 font-mono">1–2 слота/нед</span>
+        <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 font-mono">Mobile‑first</span>
+      </div>
+    </div>
+
+    <!-- Device preview -->
+    <div class="mt-16 relative w-[340px] md:w-[420px] h-[620px] device reveal" data-delay="0.20">
+      <div class="spotlight"></div>
+      <div class="w-full h-full p-6 flex flex-col relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-[260px] bg-gradient-to-b from-cyan-900/30 via-purple-900/15 to-transparent"></div>
+
+        <div class="flex justify-between items-center mb-6 relative z-10">
+          <div class="text-xs text-white/55 font-mono">Live Preview</div>
+          <div class="w-9 h-9 rounded-full bg-white/5 border border-white/10 grid place-items-center">
+            <span class="text-[10px] font-black tracking-widest">UI</span>
+          </div>
+        </div>
+
+        <div class="mb-6 relative z-10">
+          <div class="text-3xl font-extrabold">Dark Tech</div>
+          <div class="text-white/65 text-sm font-medium">
+            Spotlight • Parallax • Micro‑UX
+          </div>
+        </div>
+
+        <div class="flex-1 relative z-10">
+          <div class="grid grid-cols-2 gap-3">
+            <div class="glass-card tilt-card rounded-2xl p-4 border border-white/10">
+              <div class="text-[10px] font-mono text-white/60 uppercase tracking-widest">Sections</div>
+              <div class="mt-1 text-lg font-bold">Hero / Video / Price</div>
+            </div>
+            <div class="glass-card tilt-card rounded-2xl p-4 border border-white/10">
+              <div class="text-[10px] font-mono text-white/60 uppercase tracking-widest">Speed</div>
+              <div class="mt-1 text-lg font-bold">Fast load</div>
+            </div>
+          </div>
+
+          <div class="mt-4 glass-card rounded-2xl p-5 border border-white/10">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-[10px] font-mono text-white/60 uppercase tracking-widest">Demo</div>
+                <div class="text-lg font-bold">30–60 sec video</div>
+              </div>
+              <button id="demoBtnMock" class="px-4 py-2 rounded-full text-xs font-bold bg-white text-black hover:scale-[1.03] transition-transform">
+                Play
+              </button>
+            </div>
+            <div class="mt-4 h-2 rounded-full bg-white/10 overflow-hidden">
+              <div class="h-full w-[62%] bg-[color:var(--tw-color-accent)]"></div>
+            </div>
+          </div>
+
+          <div class="mt-4 grid grid-cols-3 gap-3 text-center text-xs">
+            <div class="glass-card tilt-card rounded-2xl p-3 border border-white/10">
+              <div class="font-mono text-white/60">UX</div>
+              <div class="font-bold">Clean</div>
+            </div>
+            <div class="glass-card tilt-card rounded-2xl p-3 border border-white/10">
+              <div class="font-mono text-white/60">Motion</div>
+              <div class="font-bold">Smooth</div>
+            </div>
+            <div class="glass-card tilt-card rounded-2xl p-3 border border-white/10">
+              <div class="font-mono text-white/60">Style</div>
+              <div class="font-bold">Premium</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 text-[11px] text-white/50 font-mono relative z-10">
+          *превью — пример интерфейса, контент меняется под твой оффер
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DEMO -->
+  <section id="demo" class="py-24 px-4 relative z-10 bg-black/50 backdrop-blur-sm border-t border-white/5">
+    <div class="max-w-6xl mx-auto">
+      <div class="mb-10 text-center reveal" data-delay="0.00">
+        <h2 class="text-3xl md:text-5xl font-extrabold">Смотри демо и решай за 30 секунд.</h2>
+        <p class="mt-3 text-white/65 max-w-2xl mx-auto">
+          Демо — это главное. Если “вау” есть — дальше всё просто: берёшь движок, я адаптирую текст, и запускаем.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+        <div class="lg:col-span-2 glass-card rounded-3xl p-5 md:p-7 reveal relative overflow-hidden" data-delay="0.05">
+          <div class="spotlight"></div>
+
+          <div class="flex items-center justify-between mb-4">
+            <div class="text-xs font-mono text-white/60 uppercase tracking-widest">Видео‑демо</div>
+            <button id="demoBtnSection"
+              class="px-4 py-2 rounded-full text-xs font-bold bg-white text-black hover:scale-[1.03] transition-transform">
+              Открыть
+            </button>
+          </div>
+
+          <div class="rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
+            <div class="aspect-video grid place-items-center text-center p-8">
+              <div class="max-w-md">
+                <div class="text-xl font-bold">Вставь свой файл</div>
+                <div class="mt-2 text-white/60 text-sm">
+                  В коде замени <span class="font-mono text-white">DEMO_VIDEO.mp4</span> на ссылку/файл. Можно mp4 или YouTube.
+                </div>
+                <div class="mt-5">
+                  <button id="demoBtnPlaceholder" class="px-6 py-3 rounded-full bg-[color:var(--tw-color-accent)] text-black font-bold">
+                    Смотреть демо
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-5 flex flex-wrap gap-2 text-[12px] text-white/60">
+            <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 font-mono">Spotlight</span>
+            <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 font-mono">Parallax</span>
+            <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 font-mono">Micro‑interactions</span>
+            <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 font-mono">OG/SEO</span>
+          </div>
+        </div>
+
+        <div class="glass-card tilt-card rounded-3xl p-7 reveal" data-delay="0.10">
+          <div class="text-xs font-mono text-white/60 uppercase tracking-widest">Что получаешь</div>
+          <ul class="mt-4 space-y-3 text-white/80">
+            <li class="flex gap-3"><span class="text-[color:var(--tw-color-accent)]">✓</span><span><b>Готовый код</b> (одностраничник/движок)</span></li>
+            <li class="flex gap-3"><span class="text-[color:var(--tw-color-accent)]">✓</span><span><b>Адаптация</b> текста/оффера под твою нишу</span></li>
+            <li class="flex gap-3"><span class="text-[color:var(--tw-color-accent)]">✓</span><span><b>Подключение</b> кнопок/ссылок/контактов</span></li>
+            <li class="flex gap-3"><span class="text-[color:var(--tw-color-accent)]">✓</span><span><b>README</b>: как запустить/редактировать</span></li>
+            <li class="flex gap-3"><span class="text-[color:var(--tw-color-accent)]">✓</span><span><b>1–2 правки</b> после сдачи</span></li>
+          </ul>
+
+          <div class="mt-7 p-4 rounded-2xl border border-white/10 bg-white/5">
+            <div class="text-sm font-bold">Срочно нужно “дорого выглядеть”?</div>
+            <div class="mt-1 text-sm text-white/65">Этот стиль даёт “понт” без лишних слов. Визуал продаёт.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="py-24 px-4">
+    <div class="max-w-6xl mx-auto">
+      <div class="mb-12 text-center reveal" data-delay="0.00">
+        <h2 class="text-3xl md:text-5xl font-extrabold">Почему это выглядит на “дорого”.</h2>
+        <p class="mt-3 text-white/65 max-w-2xl mx-auto">Тут не магия — тут дизайн, анимации и внимание к деталям.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="glass-card tilt-card p-8 rounded-3xl reveal" data-delay="0.05">
+          <div class="text-xs font-mono text-white/60 uppercase tracking-widest mb-3">Motion</div>
+          <div class="text-xl font-bold mb-2 tilt-pop">Плавные анимации</div>
+          <p class="text-white/65">GSAP‑reveal, micro‑UX, hover‑интерактивы. Никакой “дешёвой дерготни”.</p>
+        </div>
+
+        <div class="glass-card tilt-card p-8 rounded-3xl reveal" data-delay="0.08">
+          <div class="text-xs font-mono text-white/60 uppercase tracking-widest mb-3">Light</div>
+          <div class="text-xl font-bold mb-2 tilt-pop">Spotlight / фонарик</div>
+          <p class="text-white/65">Движение курсора подсвечивает ключевые зоны. Смотрится как интерфейс продукта.</p>
+        </div>
+
+        <div class="glass-card tilt-card p-8 rounded-3xl reveal" data-delay="0.10">
+          <div class="text-xs font-mono text-white/60 uppercase tracking-widest mb-3">Speed</div>
+          <div class="text-xl font-bold mb-2 tilt-pop">Оптимизация</div>
+          <p class="text-white/65">Ленивая загрузка видео, минимум зависимостей, аккуратный код.</p>
+        </div>
+
+        <div class="glass-card tilt-card p-8 rounded-3xl reveal md:col-span-2" data-delay="0.12">
+          <div class="text-xs font-mono text-white/60 uppercase tracking-widest mb-3">Structure</div>
+          <div class="text-xl font-bold mb-2 tilt-pop">Сильная структура продаж</div>
+          <p class="text-white/65">
+            Hero → демо → выгоды → цена → FAQ → контакт. Это не “портянка”, а лендинг, который ведёт к заявке.
+          </p>
+        </div>
+
+        <div class="glass-card tilt-card p-8 rounded-3xl reveal" data-delay="0.14">
+          <div class="text-xs font-mono text-white/60 uppercase tracking-widest mb-3">Mobile</div>
+          <div class="text-xl font-bold mb-2 tilt-pop">Mobile‑first</div>
+          <p class="text-white/65">Половина трафика из Telegram — сайт выглядит мощно и на телефоне.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROCESS -->
+  <section class="py-24 px-4 relative z-10 bg-black/50 backdrop-blur-sm border-t border-white/5">
+    <div class="max-w-6xl mx-auto">
+      <div class="mb-12 text-center reveal" data-delay="0.00">
+        <h2 class="text-3xl md:text-5xl font-extrabold">Как это происходит.</h2>
+        <p class="mt-3 text-white/65 max-w-2xl mx-auto">3 шага — без созвонов на 2 часа и “тех‑страданий”.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="glass-card tilt-card rounded-3xl p-8 reveal" data-delay="0.05">
+          <div class="text-xs font-mono text-white/60 uppercase tracking-widest">Шаг 01</div>
+          <div class="mt-2 text-xl font-bold tilt-pop">Ты смотришь демо</div>
+          <p class="mt-2 text-white/65">Если “вау” — идём дальше. Если нет — окей, не тратим время.</p>
+        </div>
+
+        <div class="glass-card tilt-card rounded-3xl p-8 reveal" data-delay="0.08">
+          <div class="text-xs font-mono text-white/60 uppercase tracking-widest">Шаг 02</div>
+          <div class="mt-2 text-xl font-bold tilt-pop">Кидаешь текст/контакты</div>
+          <p class="mt-2 text-white/65">Оффер, ссылки, Telegram, 1–2 скрина — и всё.</p>
+        </div>
+
+        <div class="glass-card tilt-card rounded-3xl p-8 reveal" data-delay="0.10">
+          <div class="text-xs font-mono text-white/60 uppercase tracking-widest">Шаг 03</div>
+          <div class="mt-2 text-xl font-bold tilt-pop">Я адаптирую и отдаю код</div>
+          <p class="mt-2 text-white/65">Дальше — запуск на твоём домене/хостинге (или помогу подключить).</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section id="pricing" class="py-24 px-4">
+    <div class="max-w-6xl mx-auto">
+      <div class="mb-12 text-center reveal" data-delay="0.00">
+        <h2 class="text-3xl md:text-5xl font-extrabold">Цена и пакеты.</h2>
+        <p class="mt-3 text-white/65 max-w-2xl mx-auto">
+          Основной вариант — <span class="text-white font-bold">20 000 ₽</span> за движок + адаптация.
+          Дополнительно можно докрутить установку/контент.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+        <div class="glass-card tilt-card rounded-3xl p-8 reveal" data-delay="0.05">
+          <div class="text-xs font-mono text-white/60 uppercase tracking-widest">Start</div>
+          <div class="mt-2 text-3xl font-extrabold tilt-pop">20 000 ₽</div>
+          <div class="mt-1 text-white/60">движок + адаптация</div>
+          <ul class="mt-6 space-y-3 text-white/75 text-sm">
+            <li class="flex gap-3"><span class="text-[color:var(--tw-color-accent)]">✓</span>готовый код (1 страница)</li>
+            <li class="flex gap-3"><span class="text-[color:var(--tw-color-accent)]">✓</span>адаптация текста/CTA</li>
+            <li class="flex gap-3"><span class="text-[color:var(--tw-color-accent)]">✓</span>подключение Telegram‑кнопок</li>
+            <li class="flex gap-3"><span class="text-[color:var(--tw-color-accent)]">✓</span>README по запуску</li>
+            <li class="flex gap-3"><span class="text-[color:var(--tw-color-accent)]">✓</span>1 правка после сдачи</li>
+          </ul>
+          <a id="tgBtnPricingStart" href="https://t.me/anonosya" target="_blank" rel="noreferrer"
+             class="mt-8 inline-flex w-full items-center justify-center px-6 py-4 rounded-full font-bold bg-[color:var(--tw-color-accent)] text-black">
+            Забрать Start
+          </a>
+          <div class="mt-3 text-[11px] text-white/50 font-mono">Слот: 1–2 проекта/неделя</div>
+        </div>
+
+        <div class="glass-card tilt-card rounded-3xl p-8 reveal relative overflow-hidden border border-white/15" data-delay="0.08">
+          <div class="spotlight"></div>
+          <div class="absolute top-5 right-5 px-3 py-1 rounded-full bg-white text-black text-[10px] font-black tracking-widest">
+            BEST
+          </div>
+          <div class="text-xs font-mono text-white/60 uppercase tracking-widest">Standard</div>
+          <div class="mt-2 text-3xl font-extrabold tilt-pop">35 000 ₽</div>
+          <div class="mt-1 text-white/60">Start + запуск “под ключ”</div>
+          <ul class="mt-6 space-y-3 text-white/75 text-sm">
+            <li class="flex gap-3"><span class="text-[color:var(--tw-color-accent)]">✓</span>всё из Start</li>
+            <li class="flex gap-3"><span class="text-[color:var(--tw-color-accent)]">✓</span>вставка видео‑демо + модал</li>
+            <li class="flex gap-3"><span class="text-[color:var(--tw-color-accent)]">✓</span>настройка форм/ссылок</li>
+            <li class="flex gap-3"><span class="text-[color:var(--tw-color-accent)]">✓</span>установка на ваш хостинг*</li>
+            <li class="flex gap-3"><span class="text-[color:var(--tw-color-accent)]">✓</span>2 правки после сдачи</li>
+          </ul>
+          <a id="tgBtnPricingStd" href="https://t.me/anonosya" target="_blank" rel="noreferrer"
+             class="mt-8 inline-flex w-full items-center justify-center px-6 py-4 rounded-full font-bold bg-white text-black hover:shadow-[0_0_40px_rgba(255,255,255,0.22)] transition-shadow">
+            Хочу Standard
+          </a>
+          <div class="mt-3 text-[11px] text-white/50 font-mono">*домен/хостинг оплачиваются отдельно</div>
+        </div>
+
+        <div class="glass-card tilt-card rounded-3xl p-8 reveal" data-delay="0.10">
+          <div class="text-xs font-mono text-white/60 uppercase tracking-widest">Pro</div>
+          <div class="mt-2 text-3xl font-extrabold tilt-pop">60 000 ₽</div>
+          <div class="mt-1 text-white/60">Standard + “полировка”</div>
+          <ul class="mt-6 space-y-3 text-white/75 text-sm">
+            <li class="flex gap-3"><span class="text-[color:var(--tw-color-accent)]">✓</span>всё из Standard</li>
+            <li class="flex gap-3"><span class="text-[color:var(--tw-color-accent)]">✓</span>2–3 доп. секции (кейсы/офферы)</li>
+            <li class="flex gap-3"><span class="text-[color:var(--tw-color-accent)]">✓</span>микро‑UX “дорого”</li>
+            <li class="flex gap-3"><span class="text-[color:var(--tw-color-accent)]">✓</span>OG/SEO доводка</li>
+            <li class="flex gap-3"><span class="text-[color:var(--tw-color-accent)]">✓</span>3–4 правки</li>
+          </ul>
+          <a id="tgBtnPricingPro" href="https://t.me/anonosya" target="_blank" rel="noreferrer"
+             class="mt-8 inline-flex w-full items-center justify-center px-6 py-4 rounded-full font-bold bg-white/10 border border-white/10 hover:bg-white/15 transition-colors">
+            Хочу Pro
+          </a>
+          <div class="mt-3 text-[11px] text-white/50 font-mono">Для тех, кому нужно “совсем как продукт”</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="py-24 px-4 relative z-10 bg-black/50 backdrop-blur-sm border-t border-white/5">
+    <div class="max-w-6xl mx-auto">
+      <div class="mb-12 text-center reveal" data-delay="0.00">
+        <h2 class="text-3xl md:text-5xl font-extrabold">FAQ — коротко по делу.</h2>
+        <p class="mt-3 text-white/65 max-w-2xl mx-auto">Закрываю типовые вопросы, чтобы ты не сомневался.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="glass-card tilt-card rounded-3xl p-7 reveal" data-delay="0.05">
+          <div class="font-bold text-lg tilt-pop">Это шаблон?</div>
+          <div class="mt-2 text-white/65">Это готовый код “движка”. Я меняю контент/офер/CTA под тебя и могу докрутить секции.</div>
+        </div>
+        <div class="glass-card tilt-card rounded-3xl p-7 reveal" data-delay="0.08">
+          <div class="font-bold text-lg tilt-pop">Сколько времени на запуск?</div>
+          <div class="mt-2 text-white/65">Если материалы есть — обычно в течение 24 часов. Без материалов — 1–2 дня.</div>
+        </div>
+        <div class="glass-card tilt-card rounded-3xl p-7 reveal" data-delay="0.10">
+          <div class="font-bold text-lg tilt-pop">Где будет сайт?</div>
+          <div class="mt-2 text-white/65">На твоём домене и хостинге. Могу помочь с подключением (Standard/Pro).</div>
+        </div>
+        <div class="glass-card tilt-card rounded-3xl p-7 reveal" data-delay="0.12">
+          <div class="font-bold text-lg tilt-pop">Что нужно от меня?</div>
+          <div class="mt-2 text-white/65">Название, оффер, контакты, ссылка на Telegram, видео‑демо (если есть), 1–2 примера сайтов которые нравятся.</div>
+        </div>
+        <div class="glass-card tilt-card rounded-3xl p-7 reveal" data-delay="0.14">
+          <div class="font-bold text-lg tilt-pop">Можно потом менять тексты?</div>
+          <div class="mt-2 text-white/65">Да. Я вынес контент в один блок (объект), чтобы правки занимали 2 минуты.</div>
+        </div>
+        <div class="glass-card tilt-card rounded-3xl p-7 reveal" data-delay="0.16">
+          <div class="font-bold text-lg tilt-pop">Это законно/ок?</div>
+          <div class="mt-2 text-white/65">Сайт — это упаковка и коммуникация. Никаких “обещаний доходности” я не вставляю. Текст вы согласуете.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact" class="py-24 text-center px-4">
+    <div class="max-w-3xl mx-auto reveal" data-delay="0.00">
+      <h2 class="text-4xl md:text-6xl font-extrabold mb-6 tracking-tight">
+        Хочешь “дорогой вид” <br class="hidden md:block">
+        уже <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-purple-300">сегодня</span>?
+      </h2>
+      <p class="text-white/70 mb-10 text-lg">
+        Кинь оффер/контакты — я скажу, какой пакет лучше, и дам план запуска.
+      </p>
+
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <a id="tgBtnBottom" href="https://t.me/anonosya" target="_blank" rel="noreferrer"
+           class="inline-flex items-center justify-center gap-2 bg-[color:var(--tw-color-accent)] text-black px-10 py-5 rounded-full font-bold text-lg hover:shadow-[0_0_50px_rgba(0,229,255,0.28)] transition-shadow">
+          Написать в Telegram
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+        </a>
+
+        <button id="copyTgBtn"
+           class="inline-flex items-center justify-center gap-2 bg-white/10 border border-white/10 text-white px-10 py-5 rounded-full font-bold text-lg hover:bg-white/15 transition-colors">
+          Скопировать @username
+        </button>
+      </div>
+
+      <div class="mt-6 text-[12px] text-white/55 font-mono">
+        Замените <span class="text-white">@anonosya</span> в коде на ваш Telegram.
+      </div>
+    </div>
+  </section>
+
+  <!-- Floating CTA -->
+  <a id="floatingTg"
+     href="https://t.me/anonosya" target="_blank" rel="noreferrer"
+     class="fixed bottom-6 right-6 z-50 glass-card rounded-full px-5 py-3 text-sm font-bold border border-white/10 hover:scale-[1.03] transition-transform">
+    💬 Написать в Telegram
+  </a>
+
+  <!-- VIDEO MODAL -->
+  <div id="demoModal" class="fixed inset-0 hidden items-center justify-center z-[60] p-4">
+    <div class="absolute inset-0 modal-backdrop" id="modalBackdrop"></div>
+
+    <div class="modal show glass-card rounded-3xl w-full max-w-4xl p-4 md:p-6 relative border border-white/10">
+      <div class="flex items-center justify-between mb-3">
+        <div class="text-xs font-mono text-white/60 uppercase tracking-widest">Демо‑видео</div>
+        <button id="closeModal"
+          class="px-3 py-2 rounded-full bg-white/10 border border-white/10 hover:bg-white/15 transition-colors text-sm font-bold">
+          Закрыть ✕
+        </button>
+      </div>
+
+      <div class="rounded-2xl border border-white/10 bg-black/50 overflow-hidden">
+        <video id="demoVideo" class="w-full h-auto" controls playsinline preload="metadata">
+          <!-- ЗАМЕНИ ССЫЛКУ НА СВОЁ ВИДЕО -->
+          <source src="DEMO_VIDEO.mp4" type="video/mp4" />
+        </video>
+      </div>
+
+      <div class="mt-4 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+        <div class="text-sm text-white/65">
+          Хочешь так же? Напиши — пришлю чек‑лист материалов и запущу адаптацию.
+        </div>
+        <a href="https://t.me/anonosya" target="_blank" rel="noreferrer"
+           class="inline-flex items-center justify-center px-6 py-3 rounded-full bg-[color:var(--tw-color-accent)] text-black font-bold">
+          Написать в Telegram
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ====== CONFIG (edit these) ======
+    const TELEGRAM_USERNAME = "anonosya"; // without @ // without @
+    const TELEGRAM_AT = "@anonosya";
+
+    // Apply Telegram links + copy
+    function applyTelegram() {
+      const tgUrl = "https://t.me/" + TELEGRAM_USERNAME;
+      document.querySelectorAll("a[href='https://t.me/anonosya']").forEach(a => a.href = tgUrl);
+
+      const copyBtn = document.getElementById("copyTgBtn");
+      copyBtn?.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(TELEGRAM_AT);
+          const prev = copyBtn.textContent;
+          copyBtn.textContent = "Скопировано ✓";
+          setTimeout(()=> copyBtn.textContent = prev, 1200);
+        } catch (e) {
+          alert("Скопируй вручную: " + TELEGRAM_AT);
+        }
+      });
+    }
+
+    // ====== Demo Modal ======
+    const modal = document.getElementById("demoModal");
+    const backdrop = document.getElementById("modalBackdrop");
+    const closeBtn = document.getElementById("closeModal");
+    const video = document.getElementById("demoVideo");
+
+    function openDemo() {
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+      requestAnimationFrame(() => {
+        const box = modal.querySelector(".modal");
+        box.classList.remove("show");
+        void box.offsetWidth;
+        box.classList.add("show");
+      });
+    }
+
+    function closeDemo() {
+      try { video.pause(); video.currentTime = 0; } catch(e) {}
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    }
+
+    function bindDemoButtons() {
+      ["demoBtnTop","demoBtnHero","demoBtnMock","demoBtnSection","demoBtnPlaceholder"].forEach(id=>{
+        const el = document.getElementById(id);
+        if (el) el.addEventListener("click", openDemo);
+      });
+      backdrop.addEventListener("click", closeDemo);
+      closeBtn.addEventListener("click", closeDemo);
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && !modal.classList.contains("hidden")) closeDemo();
+      });
+    }
+
+    // ====== Spotlight tracking ======
+    function bindSpotlight() {
+      const root = document.documentElement;
+      const handler = (x,y) => {
+        root.style.setProperty("--mx", x + "px");
+        root.style.setProperty("--my", y + "px");
+      };
+      window.addEventListener("mousemove", (e) => handler(e.clientX, e.clientY), { passive: true });
+      window.addEventListener("touchmove", (e) => {
+        if (!e.touches?.[0]) return;
+        handler(e.touches[0].clientX, e.touches[0].clientY);
+      }, { passive: true });
+    }
+
+    // ====== GSAP reveal ======
+    gsap.registerPlugin(ScrollTrigger);
+
+    function initReveal() {
+      const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const reveals = document.querySelectorAll(".reveal");
+      reveals.forEach(el => {
+        const d = parseFloat(el.dataset.delay || "0");
+        gsap.to(el, {
+          opacity: 1,
+          y: 0,
+          duration: prefersReduced ? 0 : 0.95,
+          delay: prefersReduced ? 0 : d,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: el,
+            start: "top 85%",
+          }
+        });
+      });
+
+      // Device gentle float
+      if (!prefersReduced) {
+        gsap.to(".device", {
+          y: -14,
+          duration: 3.2,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut"
+        });
+      }
+    }
+
+    
+    // ====== Ultra cursor light + parallax ======
+    function lerp(a, b, t){ return a + (b - a) * t; }
+
+    function initCursorLightAndParallax() {
+      const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      const cursorLight = document.getElementById("cursorLight");
+      const cursorDot = document.getElementById("cursorDot");
+      const layers = Array.from(document.querySelectorAll("#parallaxStage .parallax-layer"));
+
+      let mx = window.innerWidth * 0.5;
+      let my = window.innerHeight * 0.4;
+      let tx = mx, ty = my;
+
+      const lightRadius = 380; // half of 760
+      const dotRadius = 7;
+
+      const onMove = (x, y) => {
+        tx = x; ty = y;
+        // also feed spotlight CSS vars (фонарик внутри карточек)
+        document.documentElement.style.setProperty("--mx", x + "px");
+        document.documentElement.style.setProperty("--my", y + "px");
+      };
+
+      window.addEventListener("mousemove", (e) => onMove(e.clientX, e.clientY), { passive: true });
+      window.addEventListener("touchmove", (e) => {
+        if (!e.touches?.[0]) return;
+        onMove(e.touches[0].clientX, e.touches[0].clientY);
+      }, { passive: true });
+
+      const stage = document.getElementById("parallaxStage");
+
+      function raf() {
+        mx = lerp(mx, tx, prefersReduced ? 1 : 0.12);
+        my = lerp(my, ty, prefersReduced ? 1 : 0.12);
+
+        // cursor light follows
+        if (cursorLight && cursorDot) {
+          cursorLight.style.transform = `translate3d(${mx - lightRadius}px, ${my - lightRadius}px, 0)`;
+          cursorDot.style.transform = `translate3d(${mx - dotRadius}px, ${my - dotRadius}px, 0)`;
+          cursorLight.style.opacity = prefersReduced ? 0 : 0.92;
+          cursorDot.style.opacity = prefersReduced ? 0 : 0.9;
+        }
+
+        // Parallax layers (mouse + scroll)
+        const cx = mx - window.innerWidth / 2;
+        const cy = my - window.innerHeight / 2;
+        const sy = window.scrollY || 0;
+
+        layers.forEach(layer => {
+          const depth = parseFloat(layer.dataset.depth || "0.02");
+          const x = (-cx * depth);
+          const y = (-cy * depth) + (sy * depth * 0.25);
+          layer.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+        });
+
+        requestAnimationFrame(raf);
+      }
+
+      // Show/hide cursor light while leaving the page
+      window.addEventListener("mouseleave", () => {
+        if (cursorLight) cursorLight.style.opacity = "0";
+        if (cursorDot) cursorDot.style.opacity = "0";
+      });
+      window.addEventListener("mouseenter", () => {
+        if (prefersReduced) return;
+        if (cursorLight) cursorLight.style.opacity = ".92";
+        if (cursorDot) cursorDot.style.opacity = ".9";
+      });
+
+      // Scroll-based parallax micro (GSAP)
+      if (!prefersReduced && typeof gsap !== "undefined" && typeof ScrollTrigger !== "undefined") {
+        gsap.to(".glow-spot", {
+          y: -120,
+          ease: "none",
+          scrollTrigger: {
+            trigger: "body",
+            start: "top top",
+            end: "bottom bottom",
+            scrub: 0.6
+          }
+        });
+      }
+
+      // Start
+      if (stage) stage.style.opacity = "1";
+      requestAnimationFrame(raf);
+    }
+
+    // ====== Tilt interactions for cards ======
+    function initTiltCards() {
+      const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (prefersReduced) return;
+
+      const cards = Array.from(document.querySelectorAll(".tilt-card"));
+      const maxRot = 7;  // degrees
+      const maxMove = 8; // px
+
+      cards.forEach(card => {
+        const onEnter = () => { card.style.transition = "transform .14s ease"; };
+        const onMove = (e) => {
+          const r = card.getBoundingClientRect();
+          const x = (e.clientX - r.left) / r.width;
+          const y = (e.clientY - r.top) / r.height;
+
+          const rotY = (x - 0.5) * (maxRot * 2);
+          const rotX = (0.5 - y) * (maxRot * 2);
+          const moveX = (x - 0.5) * (maxMove * 2);
+          const moveY = (y - 0.5) * (maxMove * 2);
+
+          card.style.transition = "transform 0s";
+          card.style.transform = `perspective(900px) translate3d(${moveX}px, ${moveY}px, 0) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+        };
+        const onLeave = () => {
+          card.style.transition = "transform .18s ease";
+          card.style.transform = "perspective(900px) translate3d(0,0,0) rotateX(0deg) rotateY(0deg)";
+        };
+
+        card.addEventListener("mouseenter", onEnter);
+        card.addEventListener("mousemove", onMove);
+        card.addEventListener("mouseleave", onLeave);
+      });
+    }
+
+
+    // ====== Init ======
+    applyTelegram();
+    bindDemoButtons();
+    bindSpotlight();
+    initReveal();
+    initCursorLightAndParallax();
+    initTiltCards();
+  </script>
+</body>
+</html>
